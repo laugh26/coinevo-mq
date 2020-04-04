@@ -1,8 +1,8 @@
-#include "lokimq.h"
+#include "coinevomq.h"
 #include "hex.h"
-#include "lokimq-internal.h"
+#include "coinevomq-internal.h"
 
-namespace lokimq {
+namespace coinevomq {
 
 std::ostream& operator<<(std::ostream& o, AuthLevel a) {
     return o << to_string(a);
@@ -29,7 +29,7 @@ std::string zmtp_metadata(string_view key, string_view value) {
 }
 
 
-bool LokiMQ::proxy_check_auth(size_t conn_index, bool outgoing, const peer_info& peer,
+bool CoinevoMQ::proxy_check_auth(size_t conn_index, bool outgoing, const peer_info& peer,
         const std::string& command, const category& cat, zmq::message_t& msg) {
     std::string reply;
     if (peer.auth_level < cat.access.auth) {
@@ -39,7 +39,7 @@ bool LokiMQ::proxy_check_auth(size_t conn_index, bool outgoing, const peer_info&
     }
     else if (cat.access.local_sn && !local_service_node) {
         LMQ_LOG(warn, "Access denied to ", command, " for peer [", to_hex(peer.pubkey), "]/", peer_address(msg),
-                ": that command is only available when this LokiMQ is running in service node mode");
+                ": that command is only available when this CoinevoMQ is running in service node mode");
         reply = "NOT_A_SERVICE_NODE";
     }
     else if (cat.access.remote_sn && !peer.service_node) {
@@ -69,7 +69,7 @@ bool LokiMQ::proxy_check_auth(size_t conn_index, bool outgoing, const peer_info&
     return false;
 }
 
-void LokiMQ::process_zap_requests() {
+void CoinevoMQ::process_zap_requests() {
     for (std::vector<zmq::message_t> frames; recv_message_parts(zap_auth, frames, zmq::recv_flags::dontwait); frames.clear()) {
 #ifndef NDEBUG
         if (log_level() >= LogLevel::trace) {

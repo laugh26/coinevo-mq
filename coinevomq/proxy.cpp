@@ -1,10 +1,10 @@
-#include "lokimq.h"
-#include "lokimq-internal.h"
+#include "coinevomq.h"
+#include "coinevomq-internal.h"
 #include "hex.h"
 
-namespace lokimq {
+namespace coinevomq {
 
-void LokiMQ::proxy_quit() {
+void CoinevoMQ::proxy_quit() {
     LMQ_LOG(debug, "Received quit command, shutting down proxy thread");
 
     assert(std::none_of(workers.begin(), workers.end(), [](auto& worker) { return worker.worker_thread.joinable(); }));
@@ -27,7 +27,7 @@ void LokiMQ::proxy_quit() {
     LMQ_LOG(debug, "Proxy thread teardown complete");
 }
 
-void LokiMQ::proxy_send(bt_dict_consumer data) {
+void CoinevoMQ::proxy_send(bt_dict_consumer data) {
     // NB: bt_dict_consumer goes in alphabetical order
     string_view hint;
     std::chrono::milliseconds keep_alive{DEFAULT_SEND_KEEP_ALIVE};
@@ -191,7 +191,7 @@ void LokiMQ::proxy_send(bt_dict_consumer data) {
     }
 }
 
-void LokiMQ::proxy_reply(bt_dict_consumer data) {
+void CoinevoMQ::proxy_reply(bt_dict_consumer data) {
     bool have_conn_id = false;
     ConnectionID conn_id{0};
     if (data.skip_until("conn_id")) {
@@ -236,7 +236,7 @@ void LokiMQ::proxy_reply(bt_dict_consumer data) {
     }
 }
 
-void LokiMQ::proxy_control_message(std::vector<zmq::message_t>& parts) {
+void CoinevoMQ::proxy_control_message(std::vector<zmq::message_t>& parts) {
     if (parts.size() < 2)
         throw std::logic_error("Expected 2-3 message parts for a proxy control message");
     auto route = view(parts[0]), cmd = view(parts[1]);
@@ -283,7 +283,7 @@ void LokiMQ::proxy_control_message(std::vector<zmq::message_t>& parts) {
             " (" + std::to_string(parts.size()) + ")");
 }
 
-void LokiMQ::proxy_loop() {
+void CoinevoMQ::proxy_loop() {
 
     zap_auth.setsockopt<int>(ZMQ_LINGER, 0);
     zap_auth.bind(ZMQ_ADDR_ZAP);
@@ -331,7 +331,7 @@ void LokiMQ::proxy_loop() {
         listener.setsockopt<int>(ZMQ_ROUTER_MANDATORY, 1);
 
         listener.bind(bind[i].first);
-        LMQ_LOG(info, "LokiMQ listening on ", bind[i].first);
+        LMQ_LOG(info, "CoinevoMQ listening on ", bind[i].first);
 
         connections.push_back(std::move(listener));
         auto conn_id = next_conn_id++;
@@ -457,7 +457,7 @@ void LokiMQ::proxy_loop() {
 
 // Return true if we recognized/handled the builtin command (even if we reject it for whatever
 // reason)
-bool LokiMQ::proxy_handle_builtin(size_t conn_index, std::vector<zmq::message_t>& parts) {
+bool CoinevoMQ::proxy_handle_builtin(size_t conn_index, std::vector<zmq::message_t>& parts) {
     bool outgoing = connections[conn_index].getsockopt<int>(ZMQ_TYPE) == ZMQ_DEALER;
 
     string_view route, cmd;
@@ -551,7 +551,7 @@ bool LokiMQ::proxy_handle_builtin(size_t conn_index, std::vector<zmq::message_t>
     return false;
 }
 
-void LokiMQ::proxy_process_queue() {
+void CoinevoMQ::proxy_process_queue() {
     // First up: process any batch jobs; since these are internal they are given higher priority.
     proxy_run_batch_jobs(batch_jobs, batch_jobs_reserved, batch_jobs_active, false);
 

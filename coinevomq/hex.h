@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020, The Loki Project
+// Copyright (c) 2019-2020, The Coinevo Project
 //
 // All rights reserved.
 //
@@ -32,7 +32,7 @@
 #include <iterator>
 #include <cassert>
 
-namespace lokimq {
+namespace coinevomq {
 
 namespace detail {
 

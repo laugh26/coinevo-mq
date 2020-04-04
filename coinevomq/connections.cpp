@@ -1,8 +1,8 @@
-#include "lokimq.h"
-#include "lokimq-internal.h"
+#include "coinevomq.h"
+#include "coinevomq-internal.h"
 #include "hex.h"
 
-namespace lokimq {
+namespace coinevomq {
 
 std::ostream& operator<<(std::ostream& o, const ConnectionID& conn) {
     if (!conn.pk.empty())
@@ -24,7 +24,7 @@ void add_pollitem(std::vector<zmq::pollitem_t>& pollitems, zmq::socket_t& sock) 
 } // anonymous namespace
 
 
-void LokiMQ::rebuild_pollitems() {
+void CoinevoMQ::rebuild_pollitems() {
     pollitems.clear();
     add_pollitem(pollitems, command);
     add_pollitem(pollitems, workers_socket);
@@ -35,7 +35,7 @@ void LokiMQ::rebuild_pollitems() {
     pollitems_stale = false;
 }
 
-void LokiMQ::setup_outgoing_socket(zmq::socket_t& socket, string_view remote_pubkey) {
+void CoinevoMQ::setup_outgoing_socket(zmq::socket_t& socket, string_view remote_pubkey) {
     if (!remote_pubkey.empty()) {
         socket.setsockopt(ZMQ_CURVE_SERVERKEY, remote_pubkey.data(), remote_pubkey.size());
         socket.setsockopt(ZMQ_CURVE_PUBLICKEY, pubkey.data(), pubkey.size());
@@ -54,7 +54,7 @@ void LokiMQ::setup_outgoing_socket(zmq::socket_t& socket, string_view remote_pub
 }
 
 std::pair<zmq::socket_t *, std::string>
-LokiMQ::proxy_connect_sn(string_view remote, string_view connect_hint, bool optional, bool incoming_only, bool outgoing_only, std::chrono::milliseconds keep_alive) {
+CoinevoMQ::proxy_connect_sn(string_view remote, string_view connect_hint, bool optional, bool incoming_only, bool outgoing_only, std::chrono::milliseconds keep_alive) {
     ConnectionID remote_cid{remote};
     auto its = peers.equal_range(remote_cid);
     peer_info* peer = nullptr;
@@ -128,7 +128,7 @@ LokiMQ::proxy_connect_sn(string_view remote, string_view connect_hint, bool opti
     return {&connections.back(), ""s};
 }
 
-std::pair<zmq::socket_t *, std::string> LokiMQ::proxy_connect_sn(bt_dict_consumer data) {
+std::pair<zmq::socket_t *, std::string> CoinevoMQ::proxy_connect_sn(bt_dict_consumer data) {
     string_view hint, remote_pk;
     std::chrono::milliseconds keep_alive;
     bool optional = false, incoming_only = false, outgoing_only = false;
@@ -168,7 +168,7 @@ void update_connection_indices(Container& c, size_t index, AccessIndex get_index
 /// Closes outgoing connections and removes all references.  Note that this will invalidate
 /// iterators on the various connection containers - if you don't want that, delete it first so that
 /// the container won't contain the element being deleted.
-void LokiMQ::proxy_close_connection(size_t index, std::chrono::milliseconds linger) {
+void CoinevoMQ::proxy_close_connection(size_t index, std::chrono::milliseconds linger) {
     connections[index].setsockopt<int>(ZMQ_LINGER, linger > 0ms ? linger.count() : 0);
     pollitems_stale = true;
     connections.erase(connections.begin() + index);
@@ -186,7 +186,7 @@ void LokiMQ::proxy_close_connection(size_t index, std::chrono::milliseconds ling
     conn_index_to_id.erase(conn_index_to_id.begin() + index);
 }
 
-void LokiMQ::proxy_expire_idle_peers() {
+void CoinevoMQ::proxy_expire_idle_peers() {
     for (auto it = peers.begin(); it != peers.end(); ) {
         auto &info = it->second;
         if (info.outgoing()) {
@@ -203,7 +203,7 @@ void LokiMQ::proxy_expire_idle_peers() {
     }
 }
 
-void LokiMQ::proxy_conn_cleanup() {
+void CoinevoMQ::proxy_conn_cleanup() {
     LMQ_TRACE("starting proxy connections cleanup");
 
     // Drop idle connections (if we haven't done it in a while) but *only* if we have some idle
@@ -247,7 +247,7 @@ void LokiMQ::proxy_conn_cleanup() {
     LMQ_TRACE("done proxy connections cleanup");
 };
 
-void LokiMQ::proxy_connect_remote(bt_dict_consumer data) {
+void CoinevoMQ::proxy_connect_remote(bt_dict_consumer data) {
     AuthLevel auth_level = AuthLevel::none;
     long long conn_id = -1;
     ConnectSuccess on_connect;
@@ -315,7 +315,7 @@ void LokiMQ::proxy_connect_remote(bt_dict_consumer data) {
     peers.emplace(std::move(conn), std::move(peer));
 }
 
-void LokiMQ::proxy_disconnect(bt_dict_consumer data) {
+void CoinevoMQ::proxy_disconnect(bt_dict_consumer data) {
     ConnectionID connid{-1};
     std::chrono::milliseconds linger = 1s;
 
@@ -331,7 +331,7 @@ void LokiMQ::proxy_disconnect(bt_dict_consumer data) {
 
     proxy_disconnect(std::move(connid), linger);
 }
-void LokiMQ::proxy_disconnect(ConnectionID conn, std::chrono::milliseconds linger) {
+void CoinevoMQ::proxy_disconnect(ConnectionID conn, std::chrono::milliseconds linger) {
     LMQ_TRACE("Disconnecting outgoing connection to ", conn);
     auto pr = peers.equal_range(conn);
     for (auto it = pr.first; it != pr.second; ++it) {

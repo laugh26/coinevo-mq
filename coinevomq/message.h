@@ -2,22 +2,22 @@
 #include <vector>
 #include "connections.h"
 
-namespace lokimq {
+namespace coinevomq {
 
-class LokiMQ;
+class CoinevoMQ;
 
 /// Encapsulates an incoming message from a remote connection with message details plus extra
 /// info need to send a reply back through the proxy thread via the `reply()` method.  Note that
 /// this object gets reused: callbacks should use but not store any reference beyond the callback.
 class Message {
 public:
-    LokiMQ& lokimq; ///< The owning LokiMQ object
+    CoinevoMQ& coinevomq; ///< The owning CoinevoMQ object
     std::vector<string_view> data; ///< The provided command data parts, if any.
     ConnectionID conn; ///< The connection info for routing a reply; also contains the pubkey/sn status.
     std::string reply_tag; ///< If the invoked command is a request command this is the required reply tag that will be prepended by `send_reply()`.
 
     /// Constructor
-    Message(LokiMQ& lmq, ConnectionID cid) : lokimq{lmq}, conn{std::move(cid)} {}
+    Message(CoinevoMQ& lmq, ConnectionID cid) : coinevomq{lmq}, conn{std::move(cid)} {}
 
     // Non-copyable
     Message(const Message&) = delete;

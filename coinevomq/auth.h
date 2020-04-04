@@ -1,7 +1,7 @@
 #pragma once
 #include <iostream>
 
-namespace lokimq {
+namespace coinevomq {
 
 /// Authentication levels for command categories and connections
 enum class AuthLevel {
@@ -24,7 +24,7 @@ struct Access {
 };
 
 /// Return type of the AllowFunc: this determines whether we allow the connection at all, and if so,
-/// sets the initial authentication level and tells LokiMQ whether the other end is an active SN.
+/// sets the initial authentication level and tells CoinevoMQ whether the other end is an active SN.
 struct Allow {
     AuthLevel auth = AuthLevel::none;
     bool remote_sn = false;
